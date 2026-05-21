@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>国債の重ね合わせ — スライダー＋送信</title>
+
+<style>
+:root{
+  --paper-w: 320px;
+  --paper-h: 200px;
+  --move-max: 420px;
+}
+body{
+  font-family: sans-serif;
+  padding: 18px;
+  background:#f6f8fb;
+}
+.stage{
+  background:white;
+  padding:18px;
+  border-radius:12px;
+  max-width:420px;
+  margin:auto;
+  box-shadow:0 6px 18px rgba(0,0,0,.18);
+}
+.visual-wrap{
+  position:relative;
+  width:320px;
+  height:200px;
+  margin:auto;
+}
+.paper{
+  position:absolute;
+  width:320px;
+  height:200px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  border-radius:8px;
+  transition:transform .2s;
+}
+.A{
+  background:#0077ff;
+  color:white;
+  z-index:2;
+}
+.B{
+  background:#fff;
+  border:1px solid #ccc;
+}
+.controls{
+  text-align:center;
+  margin-top:15px;
+}
+input[type="range"]{
+  width:100%;
+}
+input[type="number"]{
+  width:100px;
+  padding:5px;
+  margin-top:10px;
+}
+button{
+  padding:6px 12px;
+  margin-top:10px;
+  background:#0077ff;
+  color:white;
+  border:none;
+  border-radius:5px;
+}
+#status{
+  margin-top:10px;
+  font-size:14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="stage">
+
+<h3>銘柄（青）と国債（白）</h3>
+
+<div class="visual-wrap">
+  <div class="paper B" id="paperB">国債</div>
+  <div class="paper A" id="paperA">銘柄</div>
+</div>
+
+<div class="controls">
+  分離量: <strong id="gapValue">0</strong> %
+  <input type="range" id="gapRange" min="0" max="100" value="0">
+</div>
+
+<div class="controls">
+  <div>↑の数値を見ながら入力してください</div>
+  <input type="number" id="manualInput" min="0" max="100" placeholder="数値入力">
+  <br>
+  <button onclick="sendToGAS()">スプレッドシートへ送信</button>
+  <div id="status"></div>
+</div>
+
+</div>
+
+<script>
+const GAS_URL = "ここにあなたのGASのURLを貼る";
+
+(function(){
+  const gapRange = document.getElementById('gapRange');
+  const gapValue = document.getElementById('gapValue');
+  const paperA = document.getElementById('paperA');
+  const paperB = document.getElementById('paperB');
+  const moveMax = 420;
+
+  function update(){
+    const t = Number(gapRange.value)/100;
+    gapValue.textContent = gapRange.value;
+    const move = t*moveMax;
+    paperA.style.transform = `translateX(${move}px)`;
+    paperB.style.transform = `translateX(${-move}px)`;
+  }
+
+  gapRange.addEventListener('input', update);
+  update();
+})();
+
+function sendToGAS(){
+  const value = document.getElementById("manualInput").value;
+  if(value === ""){
+    alert("数値を入力してください");
+    return;
+  }
+
+  const script = document.createElement("script");
+  const callbackName = "jsonpCallback";
+
+  window[callbackName] = function(response){
+    document.getElementById("status").innerText = "送信成功";
+    document.body.removeChild(script);
+  };
+
+  script.src = GAS_URL + "?numbers=" + encodeURIComponent(value) + "&callback=" + callbackName;
+  document.body.appendChild(script);
+}
+</script>
+
+</body>
+</html>
